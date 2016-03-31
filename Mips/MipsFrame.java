@@ -39,4 +39,9 @@ public class MipsFrame extends Frame {
           return new InFrame(wordSize);
       }
   }
+  
+  //rational rose says to put this. Dont' know what it does
+  private void allocFormals() {
+      
+  }
 }
