@@ -58,9 +58,49 @@ public class FindEscape {
   }
 
   void traverseDec(int depth, Absyn.Dec d) {
+      //general form: upon seeing a declaration, record it in the environment with this depth
+      if (d instanceof Absyn.FunctionDec)
+          traverseDec(depth, (Absyn.FunctionDec) d);
+      else if (d instanceof Absyn.TypeDec)
+          traverseDec(depth, (Absyn.TypeDec) d);
+      else if (d instanceof Absyn.VarDec)
+          traverseDec(depth, (Absyn.VarDec) d);
+  }
+  
+  void traverseDec(int depth, Absyn.FunctionDec d) {
+      //functions are tricky. first begin scope
+      Absyn.FunctionDec iterator = d;
+      while (iterator != null) {
+          escEnv.beginScope();
+          depth++;
+          //go through params and enter them into environment
+          Absyn.FieldList paramIterator = d.params;
+          while (paramIterator != null) {
+            escEnv.put(paramIterator.name, new FormalEscape(depth, paramIterator));
+            paramIterator = paramIterator.tail;
+          }
+          //traverse function body
+          traverseExp(depth, iterator.body);
+          //exit code
+          escEnv.endScope();
+          iterator = iterator.next;
+      }
+      
+  }
+  
+  void traverseDec(int depth, Absyn.TypeDec d) {
+      //types are not added to the environment
+  }
+  
+  void traverseDec(int depth, Absyn.VarDec d) {
+      //traverse initial value
+      traverseExp(depth, d.init);
+      //add variable name to scope
+      //REMEMBER ALWAYS ADD VARESCAPES TO ENVIRONMENT
+      escEnv.put(d.name, new VarEscape(depth, d));
   }
 
-  //General format for these: recurse into Exp property, do something if there's a VAR
+  //General format for these: recurse into each Exp property
   void traverseExp(int depth, Absyn.ArrayExp e) {
     traverseExp(depth, e.size);
     traverseExp(depth, e.init);
@@ -89,8 +129,7 @@ public class FindEscape {
 
     //Go through the for loop terminal and body
     traverseExp(depth, e.hi);
-    //Inside the for loop we've gone down the rabbit hole more (right?)
-    traverseExp(depth+1, e.body);
+    traverseExp(depth, e.body);
     escEnv.endScope();
   }
 
@@ -110,7 +149,7 @@ public class FindEscape {
           iterator = iterator.tail;
       }
       
-      traverseExp(depth+1, e.body);
+      traverseExp(depth, e.body);
       escEnv.endScope();
   }
   
