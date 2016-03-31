@@ -6,6 +6,28 @@ public class FindEscape {
   public FindEscape(Absyn.Exp e) { traverseExp(0, e);  }
 
   void traverseVar(int depth, Absyn.Var v) {
+      if (v instanceof Absyn.FieldVar)
+          traverseVar(depth, (Absyn.FieldVar) v);
+      else if (v instanceof Absyn.SimpleVar)
+          traverseVar(depth, (Absyn.SimpleVar) v);
+      else if (v instanceof Absyn.SubscriptVar)
+          traverseVar(depth, (Absyn.SubscriptVar) v);
+  }
+  
+  void traverseVar(int depth, Absyn.FieldVar v) {
+      traverseVar(depth, v.var);
+  }
+  
+  void traverseExp(int depth, Absyn.SimpleVar v) {
+      //check for escapement
+      Escape escape = (Escape) escEnv.get(v.name);
+      //variable should be defined, so definitely not null
+      if(depth > escape.depth)
+          escape.setEscape();
+  }
+  
+  void traverseVar(int depth, Absyn.SubscriptVar v) {
+      
   }
 
   void traverseExp(int depth, Absyn.Exp e) {
