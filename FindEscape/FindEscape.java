@@ -27,7 +27,8 @@ public class FindEscape {
   }
   
   void traverseVar(int depth, Absyn.SubscriptVar v) {
-      
+      traverseVar(depth, v.var);
+      traverseExp(depth, v.index);
   }
 
   void traverseExp(int depth, Absyn.Exp e) {
