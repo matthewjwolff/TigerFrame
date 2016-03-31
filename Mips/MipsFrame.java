@@ -29,5 +29,14 @@ public class MipsFrame extends Frame {
   private static final int wordSize = 4;
   public int wordSize() { return wordSize; }
 
-  public Access allocLocal(boolean escape) { return null; }
+  public Access allocLocal(boolean escape) { 
+      //if it does NOT escape, it can go InReg
+      if(!escape) {
+          //NOTE temp keeps track of the number of allocated things in its static variable
+          return new InReg(new Temp());
+      } else {
+          //I guess offset?
+          return new InFrame(wordSize);
+      }
+  }
 }
