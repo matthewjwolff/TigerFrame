@@ -16,6 +16,9 @@ public class FindEscape {
     else if (e instanceof Absyn.AssignExp) {
       traverseExp(depth, (Absyn.AssignExp) e);
     }
+    else if (e instanceof Absyn.BreakExp) {
+        //nothing
+    }
     else if (e instanceof Absyn.CallExp) {
       traverseExp(depth, (Absyn.CallExp) e);
     }
@@ -26,7 +29,7 @@ public class FindEscape {
       traverseExp(depth, (Absyn.IfExp) e);
     }
     else if (e instanceof Absyn.IntExp) {
-      traverseExp(depth, (Absyn.IntExp) e);
+      //nothing
     }
     else if (e instanceof Absyn.LetExp) {
       traverseExp(depth, (Absyn.LetExp) e);
@@ -44,7 +47,7 @@ public class FindEscape {
       traverseExp(depth, (Absyn.SeqExp) e);
     }
     else if (e instanceof Absyn.StringExp) {
-      traverseExp(depth, (Absyn.StringExp) e);
+      //nothing
     }
     else if (e instanceof Absyn.VarExp) {
       traverseExp(depth, (Absyn.VarExp) e);
@@ -58,7 +61,7 @@ public class FindEscape {
   void traverseDec(int depth, Absyn.Dec d) {
   }
 
-  //General format for these: recurse into Exp property
+  //General format for these: recurse into Exp property, do something if there's a VAR
   void traverseExp(int depth, Absyn.ArrayExp e) {
     traverseExp(depth, e.size);
     traverseExp(depth, e.init);
@@ -72,7 +75,7 @@ public class FindEscape {
   void traverseExp(int depth, Absyn.CallExp e) {
     Absyn.ExpList iterator = e.args;
     while (iterator != null) {
-      traverseExp(iterator.head);
+      traverseExp(depth, iterator.head);
       iterator = iterator.tail;
     }
   }
@@ -94,9 +97,51 @@ public class FindEscape {
 
   void traverseExp(int depth, Absyn.IfExp e) {
     traverseExp(depth, e.test);
-    traverseExp(depth, e.then);
+    traverseExp(depth, e.thenclause);
     if(e.elseclause != null) 
       traverseExp(depth, e.elseclause);
   }
 
+  void traverseExp(int depth, Absyn.LetExp e) {
+      //for decs, declare a scope, then go into the decs
+      escEnv.beginScope();
+      Absyn.DecList iterator = e.decs;
+      while(iterator!=null) {
+          traverseDec(depth, iterator.head);
+          iterator = iterator.tail;
+      }
+      
+      traverseExp(depth+1, e.body);
+      escEnv.endScope();
+  }
+  
+  void traverseExp(int depth, Absyn.OpExp e) {
+      traverseExp(depth, e.left);
+      traverseExp(depth, e.right);
+  }
+  
+  void traverseExp(int depth, Absyn.RecordExp e) {
+      Absyn.FieldExpList iterator = e.fields;
+      while (iterator != null) {
+          traverseExp(depth, iterator.init);
+          iterator = iterator.tail;
+      }
+  }
+  
+  void traverseExp(int depth, Absyn.SeqExp e) {
+      Absyn.ExpList iterator = e.list;
+      while (iterator != null) {
+          traverseExp(depth, iterator.head);
+          iterator = iterator.tail;
+      }
+  }
+  
+  void traverseExp(int depth, Absyn.VarExp e) {
+      traverseVar(depth, e.var);
+  }
+  
+  void traverseExp(int depth, Absyn.WhileExp e) {
+      traverseExp(depth, e.test);
+      traverseExp(depth, e.body);
+  }
 }
