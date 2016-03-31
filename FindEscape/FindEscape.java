@@ -55,7 +55,6 @@ public class FindEscape {
     else if (e instanceof Absyn.WhileExp) {
       traverseExp(depth, (Absyn.WhileExp) e);
     }
-    else return;
   }
 
   void traverseDec(int depth, Absyn.Dec d) {
