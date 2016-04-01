@@ -1,6 +1,6 @@
 *.class
 
-!Symbol/*.class
+!Symbol/Binder.class
 !ErrorMsg/*.class
 !Parse/*.class
 
