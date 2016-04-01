@@ -2,6 +2,7 @@ package FindEscape;
 
 public class FindEscape {
   Symbol.Table escEnv = new Symbol.Table(); // escEnv maps Symbol to Escape
+  Absyn.FunctionDec scope = null;
 
   public FindEscape(Absyn.Exp e) { traverseExp(0, e);  }
 
@@ -18,7 +19,7 @@ public class FindEscape {
       traverseVar(depth, v.var);
   }
   
-  void traverseExp(int depth, Absyn.SimpleVar v) {
+  void traverseVar(int depth, Absyn.SimpleVar v) {
       //check for escapement
       Escape escape = (Escape) escEnv.get(v.name);
       //variable should be defined, so definitely not null
@@ -92,6 +93,7 @@ public class FindEscape {
   
   void traverseDec(int depth, Absyn.FunctionDec d) {
       //functions are tricky. first begin scope
+      Absyn.FunctionDec outerScope = scope;
       Absyn.FunctionDec iterator = d;
       while (iterator != null) {
           escEnv.beginScope();
@@ -103,11 +105,13 @@ public class FindEscape {
             paramIterator = paramIterator.tail;
           }
           //traverse function body
+          scope = d;
           traverseExp(depth, iterator.body);
           //exit code
           escEnv.endScope();
           iterator = iterator.next;
       }
+      scope = outerScope;
       
   }
   
@@ -135,6 +139,8 @@ public class FindEscape {
   }
 
   void traverseExp(int depth, Absyn.CallExp e) {
+    if (scope!=null)
+        scope.leaf = false;
     Absyn.ExpList iterator = e.args;
     while (iterator != null) {
       traverseExp(depth, iterator.head);

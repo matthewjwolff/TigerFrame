@@ -22,7 +22,7 @@ public class Semant {
     //1. find all variables that escape.
     escapeTree = new FindEscape.FindEscape(exp);
     // then allocate a new level for translation of the program body, before the call to transExp.
-    level = new Level(level, Symbol.symbol("main"), null);
+    level = new Level(level, Symbol.symbol("tigermain"), null);
     transExp(exp);
   }
 
@@ -433,7 +433,7 @@ public class Semant {
       // TODO: FUNCTION LEAF DETECTION
       functionLevel = new Translate.Level(level, f.name, list, f.leaf);
       Type type = transTy(f.result);
-      f.entry = new FunEntry(fields, type);
+      f.entry = new FunEntry(functionLevel, fields, type);
       env.venv.put(f.name, f.entry);
     }
     // 2nd pass - handles the function bodies

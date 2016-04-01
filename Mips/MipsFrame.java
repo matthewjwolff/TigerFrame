@@ -29,7 +29,7 @@ public class MipsFrame extends Frame {
     name = n;
     //allocate the formal parameters in the frame
     //we start our offset at 0
-    allocFormals(0,f);
+    this.formals = allocFormals(0,f);
   }
 
   private static final int wordSize = 4;
