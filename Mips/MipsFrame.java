@@ -39,8 +39,8 @@ public class MipsFrame extends Frame {
   public Access allocLocal(boolean escape) { 
       //if it does NOT escape, it can go InReg
       if(escape) {
-          offset -= wordSize;
-          return new InFrame(offset);
+          count -= wordSize;
+          return new InFrame(count);
       } else {
           //NOTE temp keeps track of the number of allocated things in its static variable.
           //we don't have to worry about it here.
@@ -48,6 +48,9 @@ public class MipsFrame extends Frame {
           return new InReg(new Temp());
       }
   }
+  
+  //parameters: 0,4,8..
+  //locals: -4,-8,-12
   
   //Implemented non-recursively, could possibly be done better recursively?
   private AccessList allocFormals(int offset, Util.BoolList args) {

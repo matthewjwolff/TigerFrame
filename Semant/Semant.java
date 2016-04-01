@@ -1,4 +1,5 @@
 package Semant;
+import Symbol.Symbol;
 import Translate.Exp;
 import Types.Type;
 import java.util.Hashtable;
@@ -7,6 +8,8 @@ import Translate.Level;
 public class Semant {
   Env env;
   Level level;
+  FindEscape.FindEscape escapeTree;
+  
   public Semant(Frame.Frame frame, ErrorMsg.ErrorMsg err) {
     this(new Env(err), new Level(frame));
   }
@@ -16,6 +19,10 @@ public class Semant {
   }
 
   public void transProg(Absyn.Exp exp) {
+    //1. find all variables that escape.
+    escapeTree = new FindEscape.FindEscape(exp);
+    // then allocate a new level for translation of the program body, before the call to transExp.
+    level = new Level(level, Symbol.symbol("main"), null);
     transExp(exp);
   }
 
@@ -301,7 +308,8 @@ public class Semant {
     ExpTy hi = transExp(e.hi);
     checkInt(hi, e.hi.pos);
     env.venv.beginScope();
-    e.var.entry = new LoopVarEntry(INT);
+    Translate.Access access = level.allocLocal(e.var.escape);
+    e.var.entry = new LoopVarEntry(INT, access);
     env.venv.put(e.var.name, e.var.entry);
     Semant loop = new LoopSemant(env, level);
     ExpTy body = loop.transExp(e.body);
@@ -369,7 +377,9 @@ public class Semant {
       if (!init.ty.coerceTo(type))
 	error(d.pos, "assignment type mismatch");
     }
-    d.entry = new VarEntry(type);
+    //wherever a variable entry is constructed you must first allocate the variable before constructing an entry for it with the result
+    Translate.Access access = level.allocLocal(d.escape);
+    d.entry = new VarEntry(type, access);
     env.venv.put(d.name, d.entry);
     return null;
   }
@@ -405,18 +415,32 @@ public class Semant {
   Exp transDec(Absyn.FunctionDec d) {
     // 1st pass - handles the function headers
     Hashtable hash = new Hashtable();
+    //make new levels here (go throug param list)
+    Translate.Level functionLevel = null;
     for (Absyn.FunctionDec f = d; f != null; f = f.next) {
       if (hash.put(f.name, f.name) != null)
         error(f.pos, "function redeclared");
       Types.RECORD fields = transTypeFields(new Hashtable(), f.params);
+      //go through parameters, get their escape statuses
+      Util.BoolList list = null;
+      Absyn.FieldList iterator = f.params;
+      while(iterator != null) {
+          list = new Util.BoolList(iterator.escape, list);
+          list = list.tail;
+          iterator = iterator.tail;
+      }
+      //now  we have a good bool list, make the level
+      // TODO: FUNCTION LEAF DETECTION
+      functionLevel = new Translate.Level(level, f.name, list, f.leaf);
       Type type = transTy(f.result);
       f.entry = new FunEntry(fields, type);
       env.venv.put(f.name, f.entry);
     }
     // 2nd pass - handles the function bodies
+    // also add the accesses to the parameters
     for (Absyn.FunctionDec f = d; f != null; f = f.next) {
       env.venv.beginScope();
-      putTypeFields(f.entry.formals);
+      putTypeFields(f.entry.formals, functionLevel.formals);
       Semant fun = new Semant(env, f.entry.level);
       ExpTy body = fun.transExp(f.body);
       if (!body.ty.coerceTo(f.entry.result))
@@ -437,11 +461,11 @@ public class Semant {
     return new Types.RECORD(f.name, name, transTypeFields(hash, f.tail));
   }
 
-  private void putTypeFields (Types.RECORD f) {
+  private void putTypeFields (Types.RECORD f, Translate.AccessList accesses) {
     if (f == null)
       return;
-    env.venv.put(f.fieldName, new VarEntry(f.fieldType));
-    putTypeFields(f.tail);
+    env.venv.put(f.fieldName, new VarEntry(f.fieldType, accesses.head));
+    putTypeFields(f.tail, accesses.tail);
   }
 
   Type transTy(Absyn.Ty t) {
