@@ -53,20 +53,17 @@ public class MipsFrame extends Frame {
   //locals: -4,-8,-12
   
   //Implemented non-recursively, could possibly be done better recursively?
+  //nvm has to be done recursively
   private AccessList allocFormals(int offset, Util.BoolList args) {
-      AccessList list = null;
-      Util.BoolList iterator = args;
-      while (args != null) {
-          //if this escapes
+      if (args == null)
+          return null;
+      else {
           Access access;
           if(args.head) {
               access = new InFrame(offset);
               offset += wordSize;
-          }
-          else access = new InReg(new Temp());
-          list = new AccessList(access,list);
-          args = args.tail;
+          } else access = new InReg(new Temp());
+          return new AccessList(access, allocFormals(offset, args.tail));
       }
-      return list;
   }
 }
