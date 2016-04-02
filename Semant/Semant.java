@@ -415,26 +415,15 @@ public class Semant {
   Exp transDec(Absyn.FunctionDec d) {
     // 1st pass - handles the function headers
     Hashtable hash = new Hashtable();
-    //make new levels here (go throug param list)
-    Translate.Level functionLevel = null;
     for (Absyn.FunctionDec f = d; f != null; f = f.next) {
       if (hash.put(f.name, f.name) != null)
         error(f.pos, "function redeclared");
       Types.RECORD fields = transTypeFields(new Hashtable(), f.params);
       //go through parameters, get their escape statuses
-      // do the first one to keep a pointer on the head
-      Absyn.FieldList iterator = f.params;
-      Util.BoolList head = new Util.BoolList(iterator.escape, null);
-      Util.BoolList list = head.tail;
-      iterator = iterator.tail;
-      while(iterator != null) {
-          list = new Util.BoolList(iterator.escape, list);
-          list = list.tail;
-          iterator = iterator.tail;
-      }
+      //pointers kinda suck sometimes
+      Util.BoolList escapes = getEscapes(f.params);
       //now  we have a good bool list, make the level
-      // TODO: FUNCTION LEAF DETECTION
-      functionLevel = new Translate.Level(level, f.name, head, f.leaf);
+      Translate.Level functionLevel = new Translate.Level(level, f.name, escapes, f.leaf);
       Type type = transTy(f.result);
       f.entry = new FunEntry(functionLevel, fields, type);
       env.venv.put(f.name, f.entry);
@@ -443,7 +432,7 @@ public class Semant {
     // also add the accesses to the parameters
     for (Absyn.FunctionDec f = d; f != null; f = f.next) {
       env.venv.beginScope();
-      putTypeFields(f.entry.formals, functionLevel.frameFormals);
+      putTypeFields(f.entry.formals, f.entry.level.formals);
       Semant fun = new Semant(env, f.entry.level);
       ExpTy body = fun.transExp(f.body);
       if (!body.ty.coerceTo(f.entry.result))
@@ -451,6 +440,13 @@ public class Semant {
       env.venv.endScope();
     }
     return null;
+  }
+  
+  //technically this doesn't require an instance of the class...
+  private static Util.BoolList getEscapes(Absyn.FieldList params) {
+      if (params==null)
+          return null;
+      else return new Util.BoolList(params.escape, getEscapes(params.tail));
   }
 
   private Types.RECORD transTypeFields(Hashtable hash, Absyn.FieldList f) {
