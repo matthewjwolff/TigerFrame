@@ -39,8 +39,8 @@ public class MipsFrame extends Frame {
   public Access allocLocal(boolean escape) { 
       //if it does NOT escape, it can go InReg
       if(escape) {
-          count -= wordSize;
-          return new InFrame(count);
+          offset -= wordSize;
+          return new InFrame(offset);
       } else {
           //NOTE temp keeps track of the number of allocated things in its static variable.
           //we don't have to worry about it here.
