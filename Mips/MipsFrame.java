@@ -59,7 +59,7 @@ public class MipsFrame extends Frame {
       while (args != null) {
           //if this escapes
           Access access;
-          if(!args.head) {
+          if(args.head) {
               access = new InFrame(offset);
               offset += wordSize;
           }
