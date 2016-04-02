@@ -22,8 +22,7 @@ public class FindEscape {
   void traverseVar(int depth, Absyn.SimpleVar v) {
       //check for escapement
       Escape escape = (Escape) escEnv.get(v.name);
-      //variable should be defined, so definitely not null
-      if(depth > escape.depth)
+      if(escape != null && depth > escape.depth)
           escape.setEscape();
   }
   

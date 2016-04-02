@@ -443,7 +443,7 @@ public class Semant {
     // also add the accesses to the parameters
     for (Absyn.FunctionDec f = d; f != null; f = f.next) {
       env.venv.beginScope();
-      putTypeFields(f.entry.formals, functionLevel.formals);
+      putTypeFields(f.entry.formals, functionLevel.frameFormals);
       Semant fun = new Semant(env, f.entry.level);
       ExpTy body = fun.transExp(f.body);
       if (!body.ty.coerceTo(f.entry.result))
