@@ -422,8 +422,11 @@ public class Semant {
         error(f.pos, "function redeclared");
       Types.RECORD fields = transTypeFields(new Hashtable(), f.params);
       //go through parameters, get their escape statuses
-      Util.BoolList list = null;
+      // do the first one to keep a pointer on the head
       Absyn.FieldList iterator = f.params;
+      Util.BoolList head = new Util.BoolList(iterator.escape, null);
+      Util.BoolList list = head.tail;
+      iterator = iterator.tail;
       while(iterator != null) {
           list = new Util.BoolList(iterator.escape, list);
           list = list.tail;
@@ -431,7 +434,7 @@ public class Semant {
       }
       //now  we have a good bool list, make the level
       // TODO: FUNCTION LEAF DETECTION
-      functionLevel = new Translate.Level(level, f.name, list, f.leaf);
+      functionLevel = new Translate.Level(level, f.name, head, f.leaf);
       Type type = transTy(f.result);
       f.entry = new FunEntry(functionLevel, fields, type);
       env.venv.put(f.name, f.entry);
