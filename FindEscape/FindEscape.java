@@ -94,17 +94,17 @@ public class FindEscape {
       //functions are tricky. first begin scope
       Absyn.FunctionDec outerScope = scope;
       Absyn.FunctionDec iterator = d;
+      depth++;
       while (iterator != null) {
           escEnv.beginScope();
-          depth++;
           //go through params and enter them into environment
-          Absyn.FieldList paramIterator = d.params;
+          Absyn.FieldList paramIterator = iterator.params;
           while (paramIterator != null) {
             escEnv.put(paramIterator.name, new FormalEscape(depth, paramIterator));
             paramIterator = paramIterator.tail;
           }
           //traverse function body
-          scope = d;
+          scope = iterator;
           traverseExp(depth, iterator.body);
           //exit code
           escEnv.endScope();
